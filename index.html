@@ -385,6 +385,26 @@
                     </button>
                 </div>
             </div>
+            <div class="mb-5 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900">
+                <div class="font-semibold mb-2">Fleet Master Setup (Optional but Recommended)</div>
+                <p class="mb-3">Do this once before selecting incoming vehicles. If skipped, planner uses standard vehicles and capacity standards only (vehicle-level contract/CPK detail will be simplified).</p>
+                <ol class="list-decimal list-inside space-y-1 mb-3">
+                    <li>Click <span class="font-semibold">Download Fleet Template</span>.</li>
+                    <li>Fill columns exactly: Vehicle No, Transporter, Vehicle Size, Type, Hours, Contract Cost, ACPD.</li>
+                    <li><span class="font-semibold">Vehicle Size must match Standards exactly</span> (same spelling/case is safest) to avoid weight/volume mismatch.</li>
+                    <li>Upload the file, or skip and continue with standards mode.</li>
+                </ol>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <button onclick="downloadFleetTemplate()" class="bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 px-4 py-2 rounded-lg text-sm font-semibold">Download Fleet Template</button>
+                    <div class="relative">
+                        <input type="file" id="fleetTemplateInput" accept=".csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="uploadFleetTemplate(event)">
+                        <div class="bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 px-4 py-2 rounded-lg text-sm font-semibold text-center">Upload Fleet Template</div>
+                    </div>
+                    <button onclick="skipFleetTemplate()" class="bg-slate-800 text-white hover:bg-slate-700 px-4 py-2 rounded-lg text-sm font-semibold">Skip (Use Standards Only)</button>
+                </div>
+                <div class="mt-2 text-xs" id="fleetModeNote">Current mode: waiting for upload or skip decision.</div>
+            </div>
+
             <div class="mb-5 bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-sm text-indigo-800">
                 <div class="font-semibold mb-1">How to pick vehicles (Quick Guide)</div>
                 <ul class="list-disc list-inside space-y-1">
