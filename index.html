@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hubli LM Dispatch Plan</title>
+    <title>LM Dispatch Planner</title>
     
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -124,7 +124,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-lg text-slate-900 leading-tight">LM Dispatch Planner</h1>
-                    <div class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Hubli_Budrashingi_H</div>
+                    <div class="text-[10px] font-medium text-slate-400 uppercase tracking-wider" id="facilityBadge">Facility Not Selected</div>
                 </div>
             </div>
             
@@ -177,10 +177,11 @@
                 </div>
                 <h2 class="text-2xl font-bold text-slate-900 mb-2">Upload Query Data</h2>
                 <p class="text-slate-500 mb-2">Upload latest ZIP file from scheduled Query.</p>
-                <p class="text-sm text-slate-500 mb-6">
+                <p class="text-sm text-slate-500 mb-3">
                     Need the latest file? Use this quick link to open Gmail search and download the newest result:
-                    <a class="text-indigo-600 font-semibold hover:underline" href="https://mail.google.com/mail/u/0/#search/%22LM+planning+Hubli+Version+2%3A+Scheduled+query+results+available%22" target="_blank" rel="noreferrer">Open Gmail Search →</a>
+                    <a class="text-indigo-600 font-semibold hover:underline" href="https://mail.google.com/mail/u/0/#search/%22LM+planning%22+%22Scheduled+query+results+available%22" target="_blank" rel="noreferrer">Open Gmail Search →</a>
                 </p>
+                <p class="text-xs text-slate-400 mb-6">After upload, you will be asked to pick the target facility from CN facilities found in the file.</p>
                 
                 <div class="relative group cursor-pointer">
                     <div class="border-2 border-dashed border-slate-300 rounded-xl p-12 transition-all group-hover:border-blue-500 group-hover:bg-blue-50/50">
@@ -209,7 +210,7 @@
             <div class="flex justify-between items-end mb-6">
                 <div>
                     <h2 class="text-2xl font-bold text-slate-900">AVTD on Floor Check</h2>
-                    <p class="text-slate-500">Analysis of shipments currently <strong>Pending</strong> at Hubli.</p>
+                    <p class="text-slate-500">Analysis of shipments currently <strong>Pending</strong> at <span id="selectedFacilityLabel">selected facility</span>.</p>
                 </div>
                 <button onclick="openExclusionModal()" class="text-xs font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-full flex items-center gap-2 transition-colors border border-amber-200">
                     <i data-lucide="eye" class="w-3 h-3"></i>
@@ -261,7 +262,7 @@
             <div class="bg-slate-900 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between text-white shadow-xl">
                 <div class="mb-4 md:mb-0">
                     <h3 class="text-xl font-bold mb-1">Ready to Map Routes?</h3>
-                    <p class="text-slate-400 text-sm">System will verify cloud data feeds before proceeding.</p>
+                    <p class="text-slate-400 text-sm" id="systemDataSubtitle">System will verify required data before proceeding.</p>
                 </div>
                 <button id="step2ProceedBtn" onclick="proceedToMapping()" class="bg-white text-indigo-900 hover:bg-indigo-50 px-6 py-3 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                     Proceed to Route Mapping <i data-lucide="arrow-right" class="w-4 h-4"></i>
@@ -277,7 +278,7 @@
                 </button>
                 <div>
                     <h2 class="text-2xl font-bold text-slate-900">Automated Mapping</h2>
-                    <p class="text-slate-500">Data loaded from cloud. Review and handle exceptions.</p>
+                    <p class="text-slate-500">Review system data, upload missing templates (if needed), and handle exceptions.</p>
                 </div>
             </div>
             <div class="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
@@ -298,7 +299,29 @@
                         <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                         <h3 class="font-bold text-lg" id="mappingStatusTitle">Unmapped Pincodes Detected</h3>
                     </div>
-                    <p class="text-sm text-slate-500 mb-4">Some pincodes were not found in the master list. Please map them manually.</p>
+                    <p class="text-sm text-slate-500 mb-2">Some pincodes were not found in the current route map. You can map manually or use the downloadable template for faster bulk updates.</p>
+                    <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <button onclick="downloadPincodeTemplate()" class="bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
+                            <i data-lucide="download" class="w-4 h-4"></i> Download Pincode Template
+                        </button>
+                        <div class="relative">
+                            <input type="file" id="pinTemplateInput" accept=".csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="uploadPincodeTemplate(event)">
+                            <div class="bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
+                                <i data-lucide="upload" class="w-4 h-4"></i> Upload Filled Template
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div class="text-xs font-semibold text-amber-800 mb-2">Optional: Fleet Master for CPK-level planning</div>
+                        <p class="text-xs text-amber-700 mb-3">If provided, include vehicle number, transporter, vehicle size, contract type, ACPD/cost, and hours (for carting). If skipped, planner auto-uses standard vehicles and disables fleet-cost specificity.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <button onclick="downloadFleetTemplate()" class="bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 px-4 py-2 rounded-lg text-sm font-semibold">Download Fleet Template</button>
+                            <div class="relative">
+                                <input type="file" id="fleetTemplateInput" accept=".csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="uploadFleetTemplate(event)">
+                                <div class="bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 px-4 py-2 rounded-lg text-sm font-semibold text-center">Upload Fleet Template (Optional)</div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="overflow-x-auto border rounded-lg max-h-80 custom-scroll">
                         <table class="w-full text-sm text-left">
@@ -329,7 +352,11 @@
                         <i data-lucide="check" class="w-8 h-8"></i>
                     </div>
                     <h4 class="text-xl font-bold text-slate-800 mb-2">Automated Mapping Complete!</h4>
-                    <p class="text-slate-500 mb-6">Route map, fleet data, and vehicle standards are ready.</p>
+                    <p class="text-slate-500 mb-3">Route map and vehicle standards are ready.</p>
+                    <div class="mb-6 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 text-left">
+                        <div class="font-semibold text-slate-700 mb-1">Fleet Master is optional</div>
+                        <p>If you upload fleet master data, planning can run at vehicle and CPK level. If skipped, this planner will recommend and allocate using standard vehicle capacities only.</p>
+                    </div>
                     <button onclick="goToStep(4)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95">
                         Proceed to Vehicles
                     </button>
@@ -363,7 +390,7 @@
                 <ul class="list-disc list-inside space-y-1">
                     <li>Click a <span class="font-semibold">Trip ID</span> to open Midmile and manually verify if it arrives before the AVTD cut‑off tomorrow morning.</li>
                     <li>This manual method is slower. The faster way is the <span class="font-semibold">Paste List</span> button — paste raw vehicle numbers from Midmile.</li>
-                    <li>Tip: Need help? Contact <span class="font-semibold">Vinay</span> for clarification.</li>
+                    <li>Tip: Need help? Contact your operations support team for clarification.</li>
                 </ul>
             </div>
 
@@ -529,7 +556,7 @@
                  <div id="capture-target" class="bg-white p-8 rounded-none md:rounded-xl shadow-xl border border-slate-200">
                     <div class="flex justify-between items-end mb-6 border-b-2 border-slate-800 pb-4">
                         <div>
-                            <div class="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Hubli Dispatch Plan</div>
+                            <div class="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">LM Dispatch Plan</div>
                             <div class="text-sm text-slate-500 font-medium mt-1">LM Manager: vinay.a@delhivery.com</div>
                         </div>
                         <div class="text-right">
@@ -588,6 +615,25 @@
         </div>
 
     </main>
+
+    <!-- FACILITY SELECT MODAL -->
+    <div id="facilitySelectModal" class="fixed inset-0 z-[120] hidden">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-xl shadow-2xl animate-fadeIn">
+            <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-lg text-slate-800">Select Target Facility</h3>
+                    <p class="text-xs text-slate-500 mt-1">Choose a CN facility found in your uploaded file. All further checks will use this facility.</p>
+                </div>
+            </div>
+            <div class="p-5">
+                <input id="facilitySearchInput" type="text" onkeyup="filterFacilityOptions()" placeholder="Search facility..." class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <div id="facilityOptions" class="mt-4 max-h-72 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100"></div>
+                <p class="text-xs text-slate-500 mt-3">Tip: If you select <span class="font-semibold">Hubli (Hubl_Budarshingi_H)</span>, system auto-uses route map and fleet from cloud exactly like before.</p>
+            </div>
+        </div>
+    </div>
+
 
     <!-- NEW: FLEET PICKER MODAL -->
     <div id="fleetPickerModal" class="fixed inset-0 z-[100] hidden">
@@ -980,10 +1026,12 @@
     <script>
         // --- CONSTANTS ---
         const SHEET_URLS = {
-            PIN_MAP: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMI-CLNFL-JwsnysMqVd0CTpY-iVcZox5LPZ_Bslp9gi_bL5107gulTOljhAfaWcbBc_Sxh9uBaQ8E/pub?gid=0&single=true&output=csv',
+            HUBLI_PIN_MAP: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMI-CLNFL-JwsnysMqVd0CTpY-iVcZox5LPZ_Bslp9gi_bL5107gulTOljhAfaWcbBc_Sxh9uBaQ8E/pub?gid=0&single=true&output=csv',
             VEHICLE_CAPS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMI-CLNFL-JwsnysMqVd0CTpY-iVcZox5LPZ_Bslp9gi_bL5107gulTOljhAfaWcbBc_Sxh9uBaQ8E/pub?gid=1689545468&single=true&output=csv',
-            FLEET: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMI-CLNFL-JwsnysMqVd0CTpY-iVcZox5LPZ_Bslp9gi_bL5107gulTOljhAfaWcbBc_Sxh9uBaQ8E/pub?gid=590311373&single=true&output=csv'
+            HUBLI_FLEET: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMI-CLNFL-JwsnysMqVd0CTpY-iVcZox5LPZ_Bslp9gi_bL5107gulTOljhAfaWcbBc_Sxh9uBaQ8E/pub?gid=590311373&single=true&output=csv'
         };
+
+        const HUBLI_FACILITY_KEYWORDS = ['hubli', 'budarshingi'];
 
         const DEFAULT_VEHICLE_CAPACITY = [
              { type: 'mini truck (ace)', volume: 150, weight: 710 },
@@ -1018,6 +1066,10 @@
         let LAST_ASSIGNMENT = null;
         let LAM_SEARCH_TERM = "";
         let DISPATCH_STATE = {};
+        let AVAILABLE_FACILITIES = [];
+        let SELECTED_FACILITY = '';
+        let FACILITY_PENDING_PARSE_DATA = [];
+        let USE_STANDARD_FLEET_ONLY = false;
 
         // --- INIT ---
         lucide.createIcons();
@@ -1031,6 +1083,10 @@
             updateSelectedCount();
         });
         document.getElementById('lamBulkGroups').addEventListener('click', handleSmartGroupClick);
+        const pinTemplateInput = document.getElementById('pinTemplateInput');
+        if(pinTemplateInput) pinTemplateInput.addEventListener('click', () => { pinTemplateInput.value = ''; });
+        const fleetTemplateInput = document.getElementById('fleetTemplateInput');
+        if(fleetTemplateInput) fleetTemplateInput.addEventListener('click', () => { fleetTemplateInput.value = ''; });
 
         // --- DATA FETCHING (Robust) ---
         async function fetchCsv(url) {
@@ -1041,25 +1097,8 @@
         }
 
         async function initDataFeeds() {
-            // Reset
             DATA_FEED_STATUS = { pins: false, fleet: false, cap: false };
-            
-            // 1. Pincodes (Primary)
-            try {
-                const pinData = await fetchCsv(SHEET_URLS.PIN_MAP);
-                GLOBAL_PIN_MAP = {};
-                pinData.forEach(r => {
-                    const p = r['Pincode'] || r['pincode'] || Object.values(r)[0];
-                    const rt = r['Route Name'] || r['Route'] || Object.values(r)[1];
-                    if(p && rt) {
-                        GLOBAL_PIN_MAP[p.toString().trim()] = rt.toString().trim();
-                        GLOBAL_DETECTED_ROUTES.add(rt.toString().trim());
-                    }
-                });
-                DATA_FEED_STATUS.pins = Object.keys(GLOBAL_PIN_MAP).length > 0;
-            } catch (e) { console.error("Pin Fetch Fail", e); }
 
-            // 2. Capacities (Fallback if fail)
             try {
                 const capData = await fetchCsv(SHEET_URLS.VEHICLE_CAPS);
                 VEHICLE_STANDARDS = capData.map(r => ({
@@ -1069,29 +1108,198 @@
                 }));
                 DATA_FEED_STATUS.cap = VEHICLE_STANDARDS.length > 0;
             } catch(e) {
-                 VEHICLE_STANDARDS = DEFAULT_VEHICLE_CAPACITY.map(r => ({ type: r.type, vol: r.volume, wt: r.weight }));
-                 DATA_FEED_STATUS.cap = true; 
+                VEHICLE_STANDARDS = DEFAULT_VEHICLE_CAPACITY.map(r => ({ type: r.type, vol: r.volume, wt: r.weight }));
+                DATA_FEED_STATUS.cap = true;
             }
 
-            // 3. Fleet
-            try {
-                const fleetData = await fetchCsv(SHEET_URLS.FLEET);
-                FLEET_MASTER = fleetData.map(r => ({
-                    transporter: r['Transporter'] || '-',
-                    no: r['Vehicle No']?.trim().toUpperCase(),
-                    size: r['Vehicle Size'] || '-',
-                    hours: parseFloat(r['Hours']) || 0,
-                    cost: parseFloat(r['Contract Cost']) || 0,
-                    type: r['Type']?.trim() || '-', 
-                    acpd: parseFloat(r['ACPD']) || 0
-                })).filter(v => v.no);
-                DATA_FEED_STATUS.fleet = FLEET_MASTER.length > 0;
-            } catch (e) { console.error("Fleet Fetch Fail", e); }
-            
-            // Update UI
+            if(!SELECTED_FACILITY) {
+                GLOBAL_PIN_MAP = {};
+                FLEET_MASTER = [];
+                DATA_FEED_STATUS.pins = false;
+                DATA_FEED_STATUS.fleet = false;
+                updateFeedStatusUI();
+                return;
+            }
+
+            if(isHubliSelected()) {
+                try {
+                    const pinData = await fetchCsv(SHEET_URLS.HUBLI_PIN_MAP);
+                    GLOBAL_PIN_MAP = {};
+                    GLOBAL_DETECTED_ROUTES = new Set();
+                    pinData.forEach(r => {
+                        const p = r['Pincode'] || r['pincode'] || Object.values(r)[0];
+                        const rt = r['Route Name'] || r['Route'] || Object.values(r)[1];
+                        if(p && rt) {
+                            GLOBAL_PIN_MAP[p.toString().trim()] = rt.toString().trim();
+                            GLOBAL_DETECTED_ROUTES.add(rt.toString().trim());
+                        }
+                    });
+                    DATA_FEED_STATUS.pins = Object.keys(GLOBAL_PIN_MAP).length > 0;
+                } catch (e) { console.error('Hubli Pin Fetch Fail', e); }
+
+                try {
+                    const fleetData = await fetchCsv(SHEET_URLS.HUBLI_FLEET);
+                    FLEET_MASTER = normalizeFleetRows(fleetData);
+                    DATA_FEED_STATUS.fleet = FLEET_MASTER.length > 0;
+                    USE_STANDARD_FLEET_ONLY = !DATA_FEED_STATUS.fleet;
+                } catch (e) {
+                    console.error('Hubli Fleet Fetch Fail', e);
+                    FLEET_MASTER = [];
+                    DATA_FEED_STATUS.fleet = false;
+                    USE_STANDARD_FLEET_ONLY = true;
+                }
+            } else {
+                GLOBAL_PIN_MAP = {};
+                GLOBAL_DETECTED_ROUTES = new Set();
+                FLEET_MASTER = [];
+                DATA_FEED_STATUS.pins = false;
+                DATA_FEED_STATUS.fleet = false;
+                USE_STANDARD_FLEET_ONLY = true;
+            }
+
             updateFeedStatusUI();
         }
-        
+
+
+        function isHubliSelected() {
+            return HUBLI_FACILITY_KEYWORDS.every(k => SELECTED_FACILITY.toLowerCase().includes(k));
+        }
+
+        function normalizeFleetRows(fleetData) {
+            return fleetData.map(r => ({
+                transporter: r['Transporter'] || '-',
+                no: r['Vehicle No']?.trim().toUpperCase(),
+                size: r['Vehicle Size'] || '-',
+                hours: parseFloat(r['Hours']) || 0,
+                cost: parseFloat(r['Contract Cost']) || 0,
+                type: r['Type']?.trim() || '-',
+                acpd: parseFloat(r['ACPD']) || 0
+            })).filter(v => v.no);
+        }
+
+        function setSelectedFacility(facility) {
+            SELECTED_FACILITY = facility;
+            const badge = document.getElementById('facilityBadge');
+            const label = document.getElementById('selectedFacilityLabel');
+            if(badge) badge.textContent = facility;
+            if(label) label.textContent = facility;
+            const subtitle = document.getElementById('systemDataSubtitle');
+            if(subtitle) subtitle.textContent = isHubliSelected() ? 'System will verify cloud route map, fleet master, and standards before proceeding.' : 'System will use universal standards. Upload pincode-route map and optional fleet master template in next step.';
+        }
+
+        function openFacilitySelectionModal() {
+            const modal = document.getElementById('facilitySelectModal');
+            const list = document.getElementById('facilityOptions');
+            const search = document.getElementById('facilitySearchInput');
+            if(!modal || !list) return;
+            list.innerHTML = '';
+            AVAILABLE_FACILITIES.forEach(f => {
+                const button = document.createElement('button');
+                button.className = 'w-full text-left px-4 py-3 hover:bg-indigo-50 text-sm';
+                button.innerHTML = `<div class="font-semibold text-slate-800">${f}</div><div class="text-xs text-slate-500">Use ${f} as target facility for pending and in-transit filtering</div>`;
+                button.onclick = () => selectFacilityAndProcess(f);
+                list.appendChild(button);
+            });
+            if(search) search.value = '';
+            modal.classList.remove('hidden');
+        }
+
+        function filterFacilityOptions() {
+            const term = (document.getElementById('facilitySearchInput')?.value || '').toLowerCase();
+            const buttons = document.querySelectorAll('#facilityOptions button');
+            buttons.forEach(btn => {
+                btn.style.display = btn.textContent.toLowerCase().includes(term) ? '' : 'none';
+            });
+        }
+
+        async function selectFacilityAndProcess(facility) {
+            setSelectedFacility(facility);
+            document.getElementById('facilitySelectModal').classList.add('hidden');
+            processUploadData(FACILITY_PENDING_PARSE_DATA);
+            await initDataFeeds();
+            goToStep(2);
+        }
+
+        function downloadPincodeTemplate() {
+            if(!UNIQUE_PINCODES || UNIQUE_PINCODES.size === 0) {
+                showToast('No pincodes available. Upload and process data first.');
+                return;
+            }
+            const rows = Array.from(UNIQUE_PINCODES).sort().map(pin => ({ Pincode: pin, 'Route Name': GLOBAL_PIN_MAP[pin] || '' }));
+            const csv = Papa.unparse(rows);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Pincode_Route_Template_${(SELECTED_FACILITY || 'Facility').replace(/[^a-z0-9]+/gi,'_')}.csv`;
+            link.click();
+        }
+
+        function uploadPincodeTemplate(event) {
+            const file = event.target.files?.[0];
+            if(!file) return;
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: (res) => {
+                    let applied = 0;
+                    res.data.forEach(row => {
+                        const pin = (row['Pincode'] || row['pincode'] || '').toString().trim();
+                        const route = (row['Route Name'] || row['Route'] || '').toString().trim();
+                        if(pin && route) {
+                            GLOBAL_PIN_MAP[pin] = route;
+                            GLOBAL_DETECTED_ROUTES.add(route);
+                            applied++;
+                        }
+                    });
+                    showToast(applied > 0 ? `Applied ${applied} pincode mappings from template.` : 'No filled route mappings found in template.');
+                    checkRouteMapping();
+                }
+            });
+        }
+
+
+        function downloadFleetTemplate() {
+            const rows = [{
+                'Vehicle No': 'KA01AB1234',
+                'Transporter': 'Sample Transporter',
+                'Vehicle Size': 'pickup truck',
+                'Type': 'Fixed',
+                'Hours': 12,
+                'Contract Cost': 0,
+                'ACPD': 2500
+            }];
+            const csv = Papa.unparse(rows);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'Fleet_Master_Template.csv';
+            link.click();
+        }
+
+        function uploadFleetTemplate(event) {
+            const file = event.target.files?.[0];
+            if(!file) return;
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: (res) => {
+                    const uploadedFleet = normalizeFleetRows(res.data || []);
+                    if(uploadedFleet.length === 0) {
+                        showToast('No valid fleet rows found. Continuing with standard vehicles.');
+                        USE_STANDARD_FLEET_ONLY = true;
+                        DATA_FEED_STATUS.fleet = false;
+                        updateFeedStatusUI();
+                        return;
+                    }
+                    FLEET_MASTER = uploadedFleet;
+                    USE_STANDARD_FLEET_ONLY = false;
+                    DATA_FEED_STATUS.fleet = true;
+                    showToast(`Fleet master uploaded: ${uploadedFleet.length} vehicles loaded.`);
+                    updateFeedStatusUI();
+                }
+            });
+        }
+
         function updateFeedStatusUI() {
             const pinIcon = document.getElementById('statusIconPins');
             const fleetIcon = document.getElementById('statusIconFleet');
@@ -1103,7 +1311,7 @@
                 document.getElementById('statusCountPins').textContent = Object.keys(GLOBAL_PIN_MAP).length + " mapped";
             } else {
                 pinIcon.innerHTML = '<i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>';
-                document.getElementById('statusCountPins').textContent = "Failed";
+                document.getElementById('statusCountPins').textContent = isHubliSelected() ? "Missing" : "Upload template";
             }
 
             if(DATA_FEED_STATUS.fleet) {
@@ -1111,7 +1319,7 @@
                 document.getElementById('statusCountFleet').textContent = FLEET_MASTER.length + " vehicles";
             } else {
                 fleetIcon.innerHTML = '<i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>';
-                 document.getElementById('statusCountFleet').textContent = "Failed";
+                 document.getElementById('statusCountFleet').textContent = isHubliSelected() ? "Missing" : "Optional";
             }
 
             if(DATA_FEED_STATUS.cap) {
@@ -1120,7 +1328,7 @@
             }
             
             // Enable/Disable Proceed
-            if (DATA_FEED_STATUS.pins && DATA_FEED_STATUS.fleet) {
+            if (DATA_FEED_STATUS.pins || !isHubliSelected()) {
                 proceedBtn.disabled = false;
                 proceedBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             } else {
@@ -1133,10 +1341,10 @@
         initDataFeeds();
         
         function proceedToMapping() {
-             if (DATA_FEED_STATUS.pins && DATA_FEED_STATUS.fleet) {
+             if (DATA_FEED_STATUS.pins || !isHubliSelected()) {
                  goToStep(3);
              } else {
-                 alert("Critical data feeds (Map/Fleet) missing. Please check connection and retry.");
+                 alert('Route map is required for Hubli mode. Please retry cloud fetch or switch facility.');
              }
         }
 
@@ -1255,7 +1463,25 @@
                 }
                 
                 const csvText = await contents.files[csvName].async("string");
-                Papa.parse(csvText, { header: true, skipEmptyLines: true, complete: (res) => { processUploadData(res.data); document.getElementById('fileStatus').innerHTML = ""; goToStep(2); } });
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (res) => {
+                        FACILITY_PENDING_PARSE_DATA = res.data || [];
+                        const facilitySet = new Set();
+                        FACILITY_PENDING_PARSE_DATA.forEach(row => {
+                            const cn = (row['cn'] || '').toString().trim();
+                            if(cn) facilitySet.add(cn);
+                        });
+                        AVAILABLE_FACILITIES = Array.from(facilitySet).sort((a,b) => a.localeCompare(b));
+                        document.getElementById('fileStatus').innerHTML = '';
+                        if(AVAILABLE_FACILITIES.length === 0) {
+                            showToast('No CN facility found in uploaded file.');
+                            return;
+                        }
+                        openFacilitySelectionModal();
+                    }
+                });
             } catch (error) { document.getElementById('fileStatus').innerHTML = `<span class="text-red-500">Error: ${error.message}</span>`; }
         }
 
@@ -1268,15 +1494,19 @@
             let uniquePins = new Set();
             
             data.forEach(row => {
-                 const cn = (row['cn']||'').toLowerCase();
-                 const dest = (row['trip_destination_center']||'').toLowerCase();
+                 const cnRaw = (row['cn']||'').toString().trim();
+                 const cn = cnRaw.toLowerCase();
+                 const destRaw = (row['trip_destination_center']||'').toString().trim();
+                 const dest = destRaw.toLowerCase();
                  const status = (row['cs_ss']||'').toLowerCase();
                  const ccf = (row['Final CCF']||'').toLowerCase();
-                 
+
                  if (row['Master_waybill']) row['Master_waybill'] = row['Master_waybill'].toString().replace(/\D/g, '');
 
-                 const isFloor = cn.includes('hubli') && cn.includes('budarshingi') && status === 'pending';
-                 const isIncoming = dest.includes('hubli') && dest.includes('budarshingi') && cn.includes('hubli') && cn.includes('budarshingi');
+                 const selectedKey = (SELECTED_FACILITY || '').toLowerCase();
+                 const isFromSelectedFacility = cn === selectedKey;
+                 const isFloor = isFromSelectedFacility && status === 'pending';
+                 const isIncoming = dest === selectedKey && isFromSelectedFacility;
                  
                  // Exclusion Logic
                  if( isFloor || isIncoming ) {
@@ -2069,6 +2299,18 @@
 
         // --- STEP 5: LOAD PLANNING (INIT) ---
         function initLoadPlanning() {
+            if(USE_STANDARD_FLEET_ONLY && FLEET_MASTER.length === 0) {
+                FLEET_MASTER = VEHICLE_STANDARDS.map((v, idx) => ({
+                    transporter: 'Standard',
+                    no: `STD-${idx+1}-${(v.type || 'VEH').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6)}`,
+                    size: v.type,
+                    hours: 0,
+                    cost: 0,
+                    type: 'Standard',
+                    acpd: 0
+                }));
+            }
+
              const routes = new Set(GLOBAL_DISPLAY_DATA.map(r => r.mapped_route));
              routes.forEach(rt => { 
                  if(rt !== 'NA' && rt !== 'Unassigned' && !DISPATCH_PLAN[rt]) DISPATCH_PLAN[rt] = []; 
@@ -2258,7 +2500,7 @@
             const vehicle = DISPATCH_PLAN[route][idx];
             const vData = FLEET_MASTER.find(f => f.no === vehicle.vNo);
             if(!vData) {
-                alert("Fleet data missing for this vehicle. Please refresh the fleet feed.");
+                alert("Vehicle data missing. Please refresh inputs or re-open planning.");
                 return;
             }
             
@@ -2640,7 +2882,7 @@
                 captureHeader.innerHTML = `
                     <div class="flex justify-between items-end w-full">
                         <div>
-                            <div class="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Hubli Dispatch Plan</div>
+                            <div class="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">LM Dispatch Plan</div>
                             <div class="text-sm text-slate-500 font-medium mt-1">Automated Load Plan</div>
                         </div>
                         <div class="text-right">
@@ -2953,7 +3195,7 @@
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(excludedData), "Excluded");
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expectedArrivedData), "Expected_Arrived_Vehicle");
             
-            XLSX.writeFile(wb, `Hubli_Dispatch_Plan_${new Date().toISOString().slice(0,10)}.xlsx`);
+            XLSX.writeFile(wb, `LM_Dispatch_Plan_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
         function downloadJPG() {
