@@ -1181,8 +1181,18 @@
         }
 
 
+        function canonicalFacilityName(value) {
+            return (value || '')
+                .toString()
+                .toLowerCase()
+                .replace(/\s*\([^)]*\)\s*/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
         function isHubliSelected() {
-            return HUBLI_FACILITY_KEYWORDS.every(k => SELECTED_FACILITY.toLowerCase().includes(k));
+            const canonical = canonicalFacilityName(SELECTED_FACILITY);
+            return HUBLI_FACILITY_KEYWORDS.every(k => canonical.includes(k));
         }
 
         function normalizeFleetRows(fleetData) {
@@ -1279,14 +1289,17 @@
 
 
         function downloadFleetTemplate() {
+            const standardSizes = VEHICLE_STANDARDS.map(v => v.type).filter(Boolean);
+            const preferredSize = standardSizes[0] || 'pickup truck';
             const rows = [{
                 'Vehicle No': 'KA01AB1234',
                 'Transporter': 'Sample Transporter',
-                'Vehicle Size': 'pickup truck',
+                'Vehicle Size': preferredSize,
                 'Type': 'Fixed',
                 'Hours': 12,
                 'Contract Cost': 0,
-                'ACPD': 2500
+                'ACPD': 2500,
+                'Allowed Vehicle Sizes (pick one)': standardSizes.join(' | ')
             }];
             const csv = Papa.unparse(rows);
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1314,10 +1327,22 @@
                     FLEET_MASTER = uploadedFleet;
                     USE_STANDARD_FLEET_ONLY = false;
                     DATA_FEED_STATUS.fleet = true;
+                    const modeNote = document.getElementById('fleetModeNote');
+                    if(modeNote) modeNote.textContent = `Current mode: Fleet master uploaded (${uploadedFleet.length} vehicles).`;
                     showToast(`Fleet master uploaded: ${uploadedFleet.length} vehicles loaded.`);
                     updateFeedStatusUI();
                 }
             });
+        }
+
+        function skipFleetTemplate() {
+            USE_STANDARD_FLEET_ONLY = true;
+            DATA_FEED_STATUS.fleet = false;
+            FLEET_MASTER = [];
+            const modeNote = document.getElementById('fleetModeNote');
+            if(modeNote) modeNote.textContent = 'Current mode: Standards only (Fleet master skipped).';
+            showToast('Fleet master skipped. Standard vehicles will be used.');
+            updateFeedStatusUI();
         }
 
         function updateFeedStatusUI() {
@@ -1515,18 +1540,18 @@
             
             data.forEach(row => {
                  const cnRaw = (row['cn']||'').toString().trim();
-                 const cn = cnRaw.toLowerCase();
                  const destRaw = (row['trip_destination_center']||'').toString().trim();
-                 const dest = destRaw.toLowerCase();
                  const status = (row['cs_ss']||'').toLowerCase();
                  const ccf = (row['Final CCF']||'').toLowerCase();
 
                  if (row['Master_waybill']) row['Master_waybill'] = row['Master_waybill'].toString().replace(/\D/g, '');
 
-                 const selectedKey = (SELECTED_FACILITY || '').toLowerCase();
-                 const isFromSelectedFacility = cn === selectedKey;
+                 const selectedKey = canonicalFacilityName(SELECTED_FACILITY || '');
+                 const cnCanonical = canonicalFacilityName(cnRaw);
+                 const destCanonical = canonicalFacilityName(destRaw);
+                 const isFromSelectedFacility = cnCanonical === selectedKey;
                  const isFloor = isFromSelectedFacility && status === 'pending';
-                 const isIncoming = dest === selectedKey && isFromSelectedFacility;
+                 const isIncoming = destCanonical === selectedKey && status !== 'pending';
                  
                  // Exclusion Logic
                  if( isFloor || isIncoming ) {
